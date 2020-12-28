@@ -70,6 +70,7 @@ app.get("/register", checkNotAuthenticated, (req, res) => {
 
 app.post(
   "/register",
+  CheckPasswordStrength,
   checkNotAuthenticated,
   checkNotRegistred,
   async (req, res) => {
@@ -93,7 +94,7 @@ app.delete("/logout", (req, res) => {
   req.logOut();
   res.redirect("/login");
 });
-//============checkAuthenticated or not============
+//============checkPoints or not============
 function checkAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
@@ -112,8 +113,7 @@ function checkNotRegistred(req, res, next) {
     (user) => user.email == req.body.email || user.name == req.body.name
   );
 
-  var stregth = CheckPassword(req.body.password);
-  if (registred || stregth) {
+  if (registred) {
     console.log("is registred");
     return res.redirect("/register");
   }
@@ -121,18 +121,29 @@ function checkNotRegistred(req, res, next) {
   next();
 }
 
-function CheckPassword(inputtxt) {
-  var passw = /^[A-Za-z]\w{7,14}$/;
+function CheckPasswordStrength(req, res, next) {
+  var passw = new RegExp(
+    "^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[a-z])(?=.*[0-9]))|((?=.*[A-Z])(?=.*[0-9])))(?=.{6,})"
+  );
 
-  if (inputtxt.match(passw)) {
+  if (req.body.password.match(passw)) {
     console.log("good password...");
-    return false;
+    next();
+    return;
   } else {
     console.log("weak password...!");
-    return true;
+    return res.redirect("/register");
   }
 }
-
+/*
+RegEx	Description
+^	The password string will start this way
+(?=.*[a-z])	The string must contain at least 1 lowercase alphabetical character
+(?=.*[A-Z])	The string must contain at least 1 uppercase alphabetical character
+(?=.*[0-9])	The string must contain at least 1 numeric character
+(?=.*[!@#$%^&*])	The string must contain at least one special character, but we are escaping reserved RegEx characters to avoid conflict
+(?=.{8,})	The string must be eight characters or longer
+*/
 //================listening========================
 app.listen(3000);
 console.log("listning_..._");
